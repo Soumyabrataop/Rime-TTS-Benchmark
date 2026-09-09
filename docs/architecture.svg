@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="270" viewBox="0 0 1040 270" fill="none">
+  <rect width="1040" height="270" rx="18" fill="#0A1D16"/>
+  <g font-family="Arial, sans-serif">
+    <text x="52" y="48" fill="#91EAAF" font-size="14" letter-spacing="2">FASTFIELD · PARALLEL RESPONSE PATH</text>
+    <g stroke="#3F7453" stroke-width="2"><path d="M232 135h81"/><path d="M476 135h79"/><path d="M476 135v77h79"/><path d="M722 135h79"/></g>
+    <g fill="#143726" stroke="#62D98B"><rect x="52" y="99" width="180" height="72" rx="10"/><rect x="313" y="99" width="163" height="72" rx="10"/><rect x="555" y="99" width="167" height="72" rx="10"/><rect x="555" y="212" width="167" height="40" rx="10"/><rect x="801" y="99" width="180" height="72" rx="10"/></g>
+    <g fill="#DFF7E6" font-size="16" font-weight="bold"><text x="90" y="128">End of user turn</text><text x="357" y="128">Intent router</text><text x="596" y="128">Rime · ack</text><text x="581" y="238">Fixture tool / LLM</text><text x="835" y="128">First audio</text></g>
+    <g fill="#8DAE99" font-size="12"><text x="95" y="149">mic / browser STT</text><text x="344" y="149">starts both branches</text><text x="586" y="149">“Checking now.”</text><text x="580" y="154">final response prepared</text><text x="837" y="149">perceived latency</text></g>
+  </g>
+</svg>

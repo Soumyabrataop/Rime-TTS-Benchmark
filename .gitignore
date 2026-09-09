@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.dev.vars
+evaluation/results/*.json
+*.tsbuildinfo
+.wrangler/
+.DS_Store
+Thumbs.db

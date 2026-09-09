@@ -1,0 +1,29 @@
+[
+  {
+    "id": "pump_4",
+    "aliases": ["pump 4", "pump four", "p4", "e-742", "e 742"],
+    "error": "E-742",
+    "description": "Pressure sensor fault",
+    "firstCheck": "Inspect the pressure-sensor connector for moisture or a loose pin.",
+    "secondCheck": "Restart the sensor module after reseating the connector.",
+    "safeToRestart": false
+  },
+  {
+    "id": "pump_7",
+    "aliases": ["pump 7", "pump seven", "p7", "e-118", "e 118"],
+    "error": "E-118",
+    "description": "Low intake flow",
+    "firstCheck": "Check the intake strainer for blockage before restarting.",
+    "secondCheck": "Verify that the inlet valve is fully open.",
+    "safeToRestart": false
+  },
+  {
+    "id": "motor_12",
+    "aliases": ["motor 12", "motor twelve", "m12", "m-331", "m 331"],
+    "error": "M-331",
+    "description": "Overcurrent under load",
+    "firstCheck": "Inspect the driven load for a mechanical obstruction.",
+    "secondCheck": "Check the overload relay setting against the nameplate.",
+    "safeToRestart": false
+  }
+]

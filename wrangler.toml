@@ -1,0 +1,14 @@
+name = "fastfield-api"
+main = "workers/index.ts"
+compatibility_date = "2025-11-01"
+
+[vars]
+RIME_API_URL = "https://users.rime.ai/v1/rime-tts"
+RIME_MODEL_ID = "mistv3"
+RIME_SPEAKER = "cove"
+RIME_LANGUAGE = "eng"
+RIME_AUDIO_FORMAT = "audio/mpeg"
+RIME_SAMPLE_RATE = "22050"
+
+# Set `ALLOWED_ORIGIN` for the final Pages URL with `wrangler secret put`.
+# Set `RIME_API_KEY` with `wrangler secret put RIME_API_KEY` — never commit it.
