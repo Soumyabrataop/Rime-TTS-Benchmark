@@ -4,6 +4,11 @@ FastField is an immediate voice copilot for field technicians. Its hard voice pr
 
 ![FastField flow](docs/architecture.svg)
 
+## Video Walkthrough & Explanation
+
+A full video walkthrough and project explanation is available on Google Drive:
+- **Video Walkthrough & Explanation:** [Watch on Google Drive](https://drive.google.com/file/d/1ASgmBxaeXv_ALWzWPWWlWsMBxX47ACqC/view)
+
 ## The voice claim
 
 **FastField reduces perceived response time by starting a useful Rime-generated acknowledgement before its tool response is available.**
