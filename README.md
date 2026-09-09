@@ -1,4 +1,4 @@
-# FastField
+# FastField Flow
 
 FastField is an immediate voice copilot for field technicians. Its hard voice problem is the silence after a worker finishes speaking, when an equipment lookup is still running. It uses Rime as the only spoken-output provider: a short acknowledgement begins synthesis before the complete lookup result is ready, then Rime speaks the result.
 
