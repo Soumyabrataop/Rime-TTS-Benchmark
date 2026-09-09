@@ -1,10 +1,21 @@
+# Dependencies
 node_modules/
 dist/
+
+# Environment and local credentials (NEVER commit secrets)
 .env
-.env.local
+.env.*
+!.env.example
 .dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Temporary and build artifacts
 evaluation/results/*.json
 *.tsbuildinfo
 .wrangler/
+
+# OS and editor files
 .DS_Store
 Thumbs.db
+*.local
