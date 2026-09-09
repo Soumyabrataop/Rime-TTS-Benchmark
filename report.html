@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FastField — Rime Evidence Report</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080808;
+        --panel: rgba(255, 255, 255, 0.065);
+        --line: rgba(255, 255, 255, 0.16);
+        --muted: #a6a6a6;
+        --soft: #d9d9d9;
+        --white: #fff;
+        --accent: #d8ff62;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          radial-gradient(circle at 80% 0%, rgba(216, 255, 98, 0.12), transparent 30rem),
+          linear-gradient(135deg, #101010 0%, var(--bg) 55%);
+        color: var(--white);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 56px 0 64px;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 780px;
+        margin: 14px 0 12px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2.7rem, 7vw, 6.4rem);
+        font-weight: 400;
+        letter-spacing: -0.07em;
+        line-height: 0.92;
+      }
+
+      .lede {
+        max-width: 700px;
+        margin: 0;
+        color: var(--soft);
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        line-height: 1.55;
+      }
+
+      .topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--soft);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .status::before {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 18px var(--accent);
+        content: "";
+      }
+
+      section { margin-top: 48px; }
+
+      .section-label {
+        margin-bottom: 16px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .card {
+        min-height: 132px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(16px);
+      }
+
+      .metric {
+        margin: 8px 0 6px;
+        font-size: clamp(1.8rem, 3.5vw, 2.7rem);
+        font-weight: 750;
+        letter-spacing: -0.06em;
+      }
+
+      .card p, .detail p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      .evidence {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 12px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+      }
+
+      table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+
+      th, td {
+        padding: 15px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        line-height: 1.25;
+        text-transform: uppercase;
+      }
+
+      td { color: var(--soft); line-height: 1.4; }
+      td:first-child { color: var(--white); font-weight: 700; }
+      td span, .caption { color: var(--muted); }
+      tbody tr:last-child td { border-bottom: 0; }
+      .interruption-row td { color: var(--accent); }
+
+      .caption {
+        margin: 10px 2px 0;
+        font-size: 0.75rem;
+        line-height: 1.45;
+      }
+
+      .detail {
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+      }
+
+      .detail h2 {
+        margin: 0 0 14px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.8rem;
+        font-weight: 400;
+      }
+
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 22px;
+        color: var(--soft);
+        font-size: 0.86rem;
+      }
+
+      .flow span {
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .flow b { color: var(--accent); }
+
+      dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px 20px;
+        margin: 0;
+        font-size: 0.88rem;
+      }
+
+      dt { color: var(--muted); }
+      dd { margin: 0; text-align: right; }
+
+      .pass {
+        color: var(--accent);
+        font-weight: 750;
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 48px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      @media (max-width: 760px) {
+        main { padding-top: 32px; }
+        .topline { align-items: flex-start; flex-direction: column; }
+        .grid, .evidence { grid-template-columns: 1fr 1fr; }
+        .evidence { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 480px) {
+        main { width: min(100% - 24px, 1120px); }
+        .grid { grid-template-columns: 1fr; }
+        .card { min-height: auto; }
+        footer { flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topline">
+        <div>
+            <div class="eyebrow">FastField / Rime evidence</div>
+            <h1>Browser evidence report</h1>
+            <p class="lede">
+              Measured results from the shipped FastField browser path with a
+              deliberately delayed equipment lookup and streaming Rime audio.
+            </p>
+        </div>
+        <div class="status">Measured browser path</div>
+      </header>
+
+      <section>
+        <div class="section-label">Measured result table · 20 completed browser runs · 2s delayed tool</div>
+        <div class="grid">
+          <article class="card">
+            <p>First audible P50</p>
+            <div class="metric">1.06s</div>
+            <p>Overall, measured from end of user turn.</p>
+          </article>
+          <article class="card">
+            <p>First audible P90</p>
+            <div class="metric">1.22s</div>
+            <p>Overall, measured from end of user turn.</p>
+          </article>
+          <article class="card">
+            <p>Tool delay P50</p>
+            <div class="metric">2.01s</div>
+            <p>Delayed fixture lookup used in every judged run.</p>
+          </article>
+          <article class="card">
+            <p>Streaming runs</p>
+            <div class="metric">20 / 20</div>
+            <p>19 microphone runs and 1 typed run; all streaming.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="results">
+        <div class="section-label">Complete measured results</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>N</th>
+                <th>First audible<br>P50</th>
+                <th>First audible<br>P90</th>
+                <th>Final answer<br>P50</th>
+                <th>Final answer<br>P90</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>FastField warm<br><span>2s delayed tool</span></td>
+                <td>14</td>
+                <td>1,056 ms</td>
+                <td>1,198 ms</td>
+                <td>8,375 ms</td>
+                <td>10,938 ms</td>
+                <td>13 microphone, 1 typed; streaming</td>
+              </tr>
+              <tr>
+                <td>FastField cold<br><span>2s delayed tool</span></td>
+                <td>6</td>
+                <td>1,043 ms</td>
+                <td>1,309 ms</td>
+                <td>8,282 ms</td>
+                <td>11,036 ms</td>
+                <td>Microphone; streaming</td>
+              </tr>
+              <tr>
+                <td>FastField typed<br><span>2s delayed tool</span></td>
+                <td>1</td>
+                <td>1,351 ms</td>
+                <td>1,351 ms</td>
+                <td>10,976 ms</td>
+                <td>10,976 ms</td>
+                <td>Typed; not a microphone end-of-turn claim</td>
+              </tr>
+              <tr class="interruption-row">
+                <td>Interruption events</td>
+                <td>15</td>
+                <td colspan="4">Not a latency measurement</td>
+                <td>14 replacement prompts; 1 incomplete event</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">
+          Source: Judge Mode browser export summarized on 2026-09-09.
+          First audible values are measured from the end of the user turn.
+        </p>
+      </section>
+
+      <section class="evidence">
+        <article class="detail">
+          <h2>Stress-test outcome</h2>
+          <p>
+            Test sequence: “Check pump four,” followed by “Actually, pump seven.”
+            FastField cancels the active turn, stops its audio, aborts the delayed
+            lookup, and permits only the replacement turn to complete.
+          </p>
+          <div class="flow">
+            <span>Pump 4</span><b>→</b><span>cancel + stop audio</span><b>→</b><span>Pump 7 only</span>
+          </div>
+          <div class="flow">
+            <span><strong>15</strong> events</span>
+            <span><strong>14</strong> replacement prompts</span>
+          </div>
+        </article>
+
+        <article class="detail">
+          <h2>Rime configuration</h2>
+          <dl>
+            <dt>Model</dt><dd>Mist v3</dd>
+            <dt>Speaker</dt><dd>Cove</dd>
+            <dt>Language</dt><dd>English</dd>
+            <dt>Transport</dt><dd>Streaming HTTP</dd>
+            <dt>Audio</dt><dd>MP3 / 22.05 kHz</dd>
+            <dt>Provider</dt><dd class="pass">Rime only</dd>
+          </dl>
+        </article>
+      </section>
+
+      <footer>
+        <span>Evidence export: 2026-09-09</span>
+        <span>Free stack · React · Vite · Express · local fixture</span>
+      </footer>
+    </main>
+  </body>
+</html>
