@@ -22,6 +22,20 @@ type Metrics = {
   resultMode?: "streaming" | "fallback";
 };
 
+type RecordedRun = Metrics & {
+  recordedAt: string;
+  prompt: string;
+  condition: "cold" | "warm";
+  outcome: "completed" | "cancelled" | "error";
+};
+
+type InterruptionEvent = {
+  interruptedTurnId: number;
+  replacementPrompt: string;
+  recordedAt: string;
+  status: "interrupted";
+};
+
 type Lookup = {
   acknowledgement: string;
   answer: string;
@@ -70,6 +84,9 @@ export default function App() {
   const [judgeMode, setJudgeMode] = useState(true);
   const [slowTool, setSlowTool] = useState(true);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [recordedRuns, setRecordedRuns] = useState<RecordedRun[]>([]);
+  const [interruptions, setInterruptions] = useState<InterruptionEvent[]>([]);
+  const [runCondition, setRunCondition] = useState<"cold" | "warm">("warm");
   const [rime, setRime] = useState<RimeConfig | null>(null);
   const [rimeReady, setRimeReady] = useState<boolean | null>(null);
   const [speechError, setSpeechError] = useState<string | null>(null);
@@ -83,6 +100,19 @@ export default function App() {
   const recognition = useRef<SpeechRecognition | null>(null);
   const sttStartedAt = useRef<number | null>(null);
   const transcript = useRef("");
+  const listeningRef = useRef(false);
+  const stopListeningRef = useRef(false);
+  const recognitionRestart = useRef<number | null>(null);
+  const recognitionError = useRef<string | null>(null);
+  const metricsRef = useRef<Metrics | null>(null);
+
+  const updateMetrics = (next: Metrics | null | ((previous: Metrics | null) => Metrics | null)) => {
+    setMetrics((previous) => {
+      const value = typeof next === "function" ? next(previous) : next;
+      metricsRef.current = value;
+      return value;
+    });
+  };
 
   useEffect(() => {
     void fetch(apiUrl("/api/health"))
@@ -118,6 +148,11 @@ export default function App() {
   const executeTurn = async (rawPrompt: string, source: "voice" | "typed", sttMs?: number) => {
     const cleanPrompt = rawPrompt.trim();
     if (!cleanPrompt) return;
+    setInterruptions((current) => {
+      const last = current[current.length - 1];
+      if (!last || last.replacementPrompt !== "Awaiting replacement voice request") return current;
+      return [...current.slice(0, -1), { ...last, replacementPrompt: cleanPrompt }];
+    });
     cancelActive("Previous request cancelled.");
     const turnId = nextTurnId.current++;
     const controller = new AbortController();
@@ -126,7 +161,7 @@ export default function App() {
     const assistantId = `assistant-${turnId}`;
     const ackText = localAcknowledgement(cleanPrompt);
     const initialMetrics: Metrics = { turnId, source, endOfTurnMs, sttMs };
-    setMetrics(initialMetrics);
+    updateMetrics(initialMetrics);
     setMessages((current) => [
       ...current,
       { id: `user-${turnId}`, role: "user", text: cleanPrompt },
@@ -156,7 +191,7 @@ export default function App() {
 
       void acknowledgement.firstAudible.then(({ rimeTtfbMs, playbackMs }) => {
         if (active.current?.id !== turnId) return;
-        setMetrics((previous) =>
+        updateMetrics((previous) =>
           previous && previous.turnId === turnId
             ? {
                 ...previous,
@@ -171,7 +206,7 @@ export default function App() {
 
       const lookup = await lookupPromise;
       if (active.current?.id !== turnId) return;
-      setMetrics((previous) =>
+      updateMetrics((previous) =>
         previous && previous.turnId === turnId
           ? { ...previous, toolMs: Math.round(performance.now() - lookupStarted) }
           : previous,
@@ -187,11 +222,24 @@ export default function App() {
       await answer.finished;
       if (active.current?.id !== turnId) return;
       updateMessage(assistantId, { status: "done" });
-      setMetrics((previous) =>
-        previous && previous.turnId === turnId
-          ? { ...previous, finalAnswerMs: Math.round(performance.now() - endOfTurnMs) }
-          : previous,
-      );
+      const completedMetrics: Metrics = {
+        ...(metricsRef.current?.turnId === turnId ? metricsRef.current : initialMetrics),
+        finalAnswerMs: Math.round(performance.now() - endOfTurnMs),
+      };
+      metricsRef.current = completedMetrics;
+      updateMetrics(completedMetrics);
+      setRecordedRuns((current) => [
+        ...current,
+        {
+          ...initialMetrics,
+          ...completedMetrics,
+          finalAnswerMs: completedMetrics?.finalAnswerMs ?? Math.round(performance.now() - endOfTurnMs),
+          recordedAt: new Date().toISOString(),
+          prompt: cleanPrompt,
+          condition: runCondition,
+          outcome: "completed",
+        },
+      ]);
       active.current = null;
       setState("ready");
     } catch (error) {
@@ -207,8 +255,26 @@ export default function App() {
 
   const beginListening = () => {
     if (state === "listening") {
+      stopListeningRef.current = true;
+      listeningRef.current = false;
+      if (recognitionRestart.current !== null) {
+        window.clearTimeout(recognitionRestart.current);
+        recognitionRestart.current = null;
+      }
       recognition.current?.stop();
       return;
+    }
+    const interruptedTurn = active.current;
+    if (interruptedTurn) {
+      setInterruptions((current) => [
+        ...current,
+        {
+          interruptedTurnId: interruptedTurn.id,
+          replacementPrompt: "Awaiting replacement voice request",
+          recordedAt: new Date().toISOString(),
+          status: "interrupted",
+        },
+      ]);
     }
     cancelActive("Interrupted by a new voice turn.");
     const Constructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -217,36 +283,77 @@ export default function App() {
       setState("error");
       return;
     }
-    const instance = new Constructor();
-    recognition.current = instance;
+    const Recognition = Constructor;
+    listeningRef.current = true;
+    stopListeningRef.current = false;
+    recognitionError.current = null;
     transcript.current = "";
     sttStartedAt.current = performance.now();
-    instance.lang = "en-US";
-    instance.continuous = false;
-    instance.interimResults = true;
-    instance.onresult = (event) => {
-      transcript.current = Array.from({ length: event.results.length }, (_, index) => event.results[index]?.[0]?.transcript ?? "").join("");
-      setPrompt(transcript.current);
-    };
-    instance.onerror = (event) => {
-      if (event.error === "aborted") return;
-      setSpeechError(`Speech recognition: ${event.error}. You can still type a request.`);
-      setState("error");
-    };
-    instance.onend = () => {
-      const spoken = transcript.current.trim();
-      const sttMs = sttStartedAt.current ? Math.round(performance.now() - sttStartedAt.current) : undefined;
-      recognition.current = null;
-      if (spoken) void executeTurn(spoken, "voice", sttMs);
-      else setState("ready");
-    };
+    function startRecognition(): void {
+      if (!listeningRef.current || stopListeningRef.current) return;
+      const instance = new Recognition();
+      recognition.current = instance;
+      const baseTranscript = transcript.current;
+      instance.lang = "en-US";
+      instance.continuous = true;
+      instance.interimResults = true;
+      instance.onresult = (event) => {
+        const currentTranscript = Array.from(
+          { length: event.results.length },
+          (_, index) => event.results[index]?.[0]?.transcript ?? "",
+        ).join("");
+        transcript.current = `${baseTranscript} ${currentTranscript}`.trim();
+        setPrompt(transcript.current);
+      };
+      instance.onerror = (event) => {
+        if (event.error === "aborted" || event.error === "no-speech") return;
+        listeningRef.current = false;
+        recognitionError.current = event.error;
+        const message =
+          event.error === "network"
+            ? "Browser speech recognition needs its network service. Check your connection, then retry, or type the request below."
+            : `Speech recognition failed (${event.error}). You can still type the request below.`;
+        setSpeechError(message);
+        recognition.current = null;
+        setState("ready");
+      };
+      instance.onend = () => {
+        if (recognition.current !== instance) return;
+        recognition.current = null;
+        if (recognitionError.current) {
+          listeningRef.current = false;
+          setState("ready");
+          return;
+        }
+        if (listeningRef.current && !stopListeningRef.current) {
+          recognitionRestart.current = window.setTimeout(() => {
+            recognitionRestart.current = null;
+            startRecognition();
+          }, 150);
+          return;
+        }
+        const spoken = transcript.current.trim();
+        const sttMs = sttStartedAt.current ? Math.round(performance.now() - sttStartedAt.current) : undefined;
+        listeningRef.current = false;
+        if (spoken) void executeTurn(spoken, "voice", sttMs);
+        else setState("ready");
+      };
+      try {
+        instance.start();
+      } catch {
+        recognition.current = null;
+        listeningRef.current = false;
+        setSpeechError("Microphone recognition could not start. Check browser microphone permission.");
+        setState("error");
+      }
+    }
     setState("listening");
     setSpeechError(null);
-    instance.start();
+    startRecognition();
   };
 
   const status = useMemo(() => {
-    if (state === "listening") return "Listening — release a short equipment question";
+    if (state === "listening") return "Listening — press Stop and send when you finish";
     if (state === "working") return "Starting the immediate Rime acknowledgement";
     if (state === "speaking") return "Rime is speaking";
     if (state === "error") return "Voice output needs attention";
@@ -256,6 +363,19 @@ export default function App() {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void executeTurn(prompt, "typed");
+  };
+
+  const exportRuns = () => {
+    const blob = new Blob(
+      [JSON.stringify({ exportedAt: new Date().toISOString(), runs: recordedRuns, interruptions }, null, 2)],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fastfield-browser-runs-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -314,9 +434,9 @@ export default function App() {
               />
               <button className="send-button" type="submit" disabled={!prompt.trim() || state === "working" || state === "speaking"} aria-label="Send typed question">↑</button>
             </div>
-            <button className={`mic-button ${state === "listening" ? "is-listening" : ""}`} type="button" onClick={beginListening} aria-label="Use microphone">
+            <button className={`mic-button ${state === "listening" ? "is-listening" : ""}`} type="button" onClick={beginListening} aria-label={state === "listening" ? "Stop listening and submit" : "Start microphone"}>
               <span className="mic-icon" aria-hidden="true" />
-              <span>{state === "listening" ? "Stop listening" : "Hold to talk"}</span>
+              <span>{state === "listening" ? "Stop and send" : "Start speaking"}</span>
             </button>
           </form>
 
@@ -356,6 +476,26 @@ export default function App() {
               <div><strong>Stress test</strong><span>Inject a fixed 2s equipment delay</span></div>
               <button type="button" className={slowTool ? "switch on" : "switch"} onClick={() => setSlowTool((value) => !value)} aria-pressed={slowTool}><i /></button>
             </div>
+            <div className="run-controls">
+              <div>
+                <span>{recordedRuns.length} completed run{recordedRuns.length === 1 ? "" : "s"} recorded</span>
+                <span>{interruptions.length} interruption{interruptions.length === 1 ? "" : "s"} recorded</span>
+                <label className="condition-control">
+                  <span>Run condition</span>
+                  <select value={runCondition} onChange={(event) => setRunCondition(event.target.value as "cold" | "warm")}>
+                    <option value="warm">Warm</option>
+                    <option value="cold">Cold</option>
+                  </select>
+                </label>
+              </div>
+              <button type="button" onClick={exportRuns} disabled={!recordedRuns.length}>Download readings</button>
+            </div>
+            {interruptions.length > 0 && (
+              <div className="interruption-notice" role="status">
+                <strong>INTERRUPTION RECORDED</strong>
+                <span>Turn {String(interruptions[interruptions.length - 1]!.interruptedTurnId).padStart(3, "0")} was cancelled by a new voice request.</span>
+              </div>
+            )}
             <p className="fence-note"><span>↯</span> New turns abort audio and fence obsolete tool results.</p>
 
             <details className="rime-details">

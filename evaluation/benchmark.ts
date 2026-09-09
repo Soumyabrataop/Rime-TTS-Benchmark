@@ -16,21 +16,30 @@ type Run = {
 };
 
 async function run(prompt: string): Promise<Run> {
+  const ackResponse = await fetch(`${server}/api/ack`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: prompt }),
+  });
+  if (!ackResponse.ok) throw new Error(`Acknowledgement lookup failed for ${prompt}`);
+  const acknowledgement = (await ackResponse.json()) as { acknowledgement: string };
+
   const lookupStart = performance.now();
-  const lookupResponse = await fetch(`${server}/api/lookup`, {
+  const lookupPromise = fetch(`${server}/api/lookup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: prompt, delayMs }),
+  }).then(async (response) => {
+    if (!response.ok) throw new Error(`Lookup failed for ${prompt}`);
+    await response.arrayBuffer();
+    return performance.now() - lookupStart;
   });
-  if (!lookupResponse.ok) throw new Error(`Lookup failed for ${prompt}`);
-  const lookup = (await lookupResponse.json()) as { acknowledgement: string };
-  const toolMs = performance.now() - lookupStart;
 
   const ttsStart = performance.now();
   const ttsResponse = await fetch(`${server}/api/tts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: lookup.acknowledgement, stage: "ack" }),
+    body: JSON.stringify({ text: acknowledgement.acknowledgement, stage: "ack" }),
   });
   if (!ttsResponse.ok || !ttsResponse.body) {
     throw new Error(`TTS failed: ${await ttsResponse.text()}`);
@@ -38,9 +47,11 @@ async function run(prompt: string): Promise<Run> {
   const rimeHeaderMs = performance.now() - ttsStart;
   const reader = ttsResponse.body.getReader();
   await reader.read();
+  const rimeFirstChunkMs = performance.now() - ttsStart;
   await reader.cancel();
+  const toolMs = await lookupPromise;
 
-  return { prompt, toolMs, rimeHeaderMs, rimeFirstChunkMs: performance.now() - ttsStart };
+  return { prompt, toolMs, rimeHeaderMs, rimeFirstChunkMs };
 }
 
 function percentile(numbers: number[], p: number): number {
@@ -69,6 +80,16 @@ const result = {
     toolMs: percentile(runs.map((item) => item.toolMs), 0.9),
     rimeHeaderMs: percentile(runs.map((item) => item.rimeHeaderMs), 0.9),
     rimeFirstChunkMs: percentile(runs.map((item) => item.rimeFirstChunkMs), 0.9),
+  },
+  min: {
+    toolMs: Math.min(...runs.map((item) => item.toolMs)),
+    rimeHeaderMs: Math.min(...runs.map((item) => item.rimeHeaderMs)),
+    rimeFirstChunkMs: Math.min(...runs.map((item) => item.rimeFirstChunkMs)),
+  },
+  max: {
+    toolMs: Math.max(...runs.map((item) => item.toolMs)),
+    rimeHeaderMs: Math.max(...runs.map((item) => item.rimeHeaderMs)),
+    rimeFirstChunkMs: Math.max(...runs.map((item) => item.rimeFirstChunkMs)),
   },
   runs,
 };

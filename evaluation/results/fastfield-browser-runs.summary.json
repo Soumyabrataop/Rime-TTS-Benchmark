@@ -1,0 +1,130 @@
+{
+  "exportedAt": "2026-09-09T20:14:31.662Z",
+  "scope": "Browser Judge Mode readings. These are user-path measurements from the exported application run.",
+  "totals": {
+    "exported": 20,
+    "completed": 20,
+    "cancelled": 0,
+    "errors": 0,
+    "interruptions": 15,
+    "interruptionsWithReplacement": 14,
+    "incompleteInterruptions": 1
+  },
+  "groups": {
+    "allCompleted": {
+      "firstAudibleMs": {
+        "n": 20,
+        "p50": 1056,
+        "p90": 1216,
+        "min": 484,
+        "max": 1351
+      },
+      "finalAnswerMs": {
+        "n": 20,
+        "p50": 8375,
+        "p90": 10938,
+        "min": 7570,
+        "max": 11036
+      },
+      "toolMs": {
+        "n": 20,
+        "p50": 2012,
+        "p90": 2022,
+        "min": 2006,
+        "max": 2027
+      },
+      "rimeTtfbMs": {
+        "n": 20,
+        "p50": 1016,
+        "p90": 1152,
+        "min": 399,
+        "max": 1250
+      }
+    },
+    "typed": {
+      "firstAudibleMs": {
+        "n": 1,
+        "p50": 1351,
+        "p90": 1351,
+        "min": 1351,
+        "max": 1351
+      },
+      "finalAnswerMs": {
+        "n": 1,
+        "p50": 10976,
+        "p90": 10976,
+        "min": 10976,
+        "max": 10976
+      }
+    },
+    "microphone": {
+      "firstAudibleMs": {
+        "n": 19,
+        "p50": 1056,
+        "p90": 1216,
+        "min": 484,
+        "max": 1309
+      },
+      "finalAnswerMs": {
+        "n": 19,
+        "p50": 8375,
+        "p90": 10938,
+        "min": 7570,
+        "max": 11036
+      }
+    },
+    "streaming": {
+      "firstAudibleMs": {
+        "n": 20,
+        "p50": 1056,
+        "p90": 1216,
+        "min": 484,
+        "max": 1351
+      },
+      "finalAnswerMs": {
+        "n": 20,
+        "p50": 8375,
+        "p90": 10938,
+        "min": 7570,
+        "max": 11036
+      }
+    },
+    "cold": {
+      "firstAudibleMs": {
+        "n": 6,
+        "p50": 1043,
+        "p90": 1309,
+        "min": 484,
+        "max": 1309
+      },
+      "finalAnswerMs": {
+        "n": 6,
+        "p50": 8282,
+        "p90": 11036,
+        "min": 7570,
+        "max": 11036
+      }
+    },
+    "warm": {
+      "firstAudibleMs": {
+        "n": 14,
+        "p50": 1056,
+        "p90": 1198,
+        "min": 999,
+        "max": 1351
+      },
+      "finalAnswerMs": {
+        "n": 14,
+        "p50": 8375,
+        "p90": 10938,
+        "min": 8095,
+        "max": 10976
+      }
+    }
+  },
+  "limitations": [
+    "The export measures completed turns only; interruption success and stale-audio failures must be counted separately during the stress test.",
+    "Typed runs are not microphone end-of-turn measurements.",
+    "Fallback transport runs must not be used for streaming latency claims."
+  ]
+}

@@ -117,6 +117,17 @@ async function parseText(request: Request): Promise<{ text?: string; delayMs?: n
   };
 }
 
+function waitWithAbort(ms: number, signal: AbortSignal): Promise<void> {
+  if (ms === 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timeout);
+      reject(new DOMException("Request cancelled", "AbortError"));
+    }, { once: true });
+  });
+}
+
 function validText(text: string | undefined): text is string {
   return Boolean(text && text.length <= 500);
 }
@@ -133,7 +144,7 @@ export default {
         rime: {
           modelId: env.RIME_MODEL_ID || "mistv3",
           speaker: env.RIME_SPEAKER || "cove",
-          language: env.RIME_LANGUAGE || "eng",
+          language: env.RIME_LANGUAGE || "en",
           endpoint: env.RIME_API_URL || "https://users.rime.ai/v1/rime-tts",
           format: env.RIME_AUDIO_FORMAT || "audio/mpeg",
           transport: "streaming HTTP proxy",
@@ -145,8 +156,20 @@ export default {
       if (!validText(body.text)) return json({ error: "Provide a prompt of up to 500 characters." }, env, { status: 400 });
       const startedAt = performance.now();
       const delayMs = Math.max(0, Math.min(4_000, Math.floor(body.delayMs || 0)));
-      if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+      try {
+        await waitWithAbort(delayMs, request.signal);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return json({ error: "Lookup cancelled" }, env, { status: 499 });
+        }
+        throw error;
+      }
       return json({ ...lookup(body.text), serverToolMs: Math.round(performance.now() - startedAt), fixture: true }, env);
+    }
+    if (url.pathname === "/api/ack" && request.method === "POST") {
+      const body = await parseText(request);
+      if (!validText(body.text)) return json({ error: "Provide a prompt of up to 500 characters." }, env, { status: 400 });
+      return json({ acknowledgement: lookup(body.text).acknowledgement, fixture: true }, env);
     }
     if (url.pathname === "/api/tts" && request.method === "POST") {
       const body = await parseText(request);
@@ -165,7 +188,7 @@ export default {
           text: body.text,
           modelId: env.RIME_MODEL_ID || "mistv3",
           speaker: env.RIME_SPEAKER || "cove",
-          lang: env.RIME_LANGUAGE || "eng",
+          lang: env.RIME_LANGUAGE || "en",
           samplingRate: Number(env.RIME_SAMPLE_RATE || 22050),
           speedAlpha: 1.07,
           noTextNormalization: body.stage === "ack",

@@ -11,6 +11,7 @@
     "start": "tsx server/index.ts",
     "check": "tsc -b",
     "benchmark": "tsx evaluation/benchmark.ts",
+    "summarize:browser": "tsx evaluation/summarize-browser-runs.ts",
     "dev:worker": "wrangler dev",
     "deploy:worker": "wrangler deploy"
   },

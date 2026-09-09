@@ -9,7 +9,7 @@ const port = Number(process.env.PORT ?? 8787);
 const rimeApiUrl = process.env.RIME_API_URL ?? "https://users.rime.ai/v1/rime-tts";
 const rimeModelId = process.env.RIME_MODEL_ID ?? "mistv3";
 const rimeSpeaker = process.env.RIME_SPEAKER ?? "cove";
-const rimeLanguage = process.env.RIME_LANGUAGE ?? "eng";
+const rimeLanguage = process.env.RIME_LANGUAGE ?? "en";
 const rimeAudioFormat = process.env.RIME_AUDIO_FORMAT ?? "audio/mpeg";
 const rimeSampleRate = Number(process.env.RIME_SAMPLE_RATE ?? 22050);
 
@@ -83,6 +83,16 @@ app.post("/api/lookup", async (request: Request<unknown, unknown, LookupRequest>
   } catch {
     if (!response.headersSent) response.status(499).json({ error: "Lookup cancelled" });
   }
+});
+
+app.post("/api/ack", (request: Request<unknown, unknown, LookupRequest>, response) => {
+  const text = validatedText(request.body.text);
+  if (!text) {
+    response.status(400).json({ error: "Provide a prompt of up to 500 characters." });
+    return;
+  }
+  const result = lookupEquipment(text);
+  response.json({ acknowledgement: result.acknowledgement, fixture: true });
 });
 
 app.post("/api/tts", async (request: Request<unknown, unknown, TtsRequest>, response) => {

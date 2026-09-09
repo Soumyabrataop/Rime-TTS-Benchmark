@@ -50,7 +50,7 @@ The active values are surfaced by `/api/health` and Judge Mode. Configure them i
 | --- | --- | --- |
 | Model ID | `mistv3` | Low-latency Rime model |
 | Speaker | `cove` | Default Rime voice; verify catalog access before submission |
-| Language | `eng` | English synthesis language |
+| Language | `en` | English synthesis language |
 | Endpoint | `https://users.rime.ai/v1/rime-tts` | Streaming HTTP endpoint; select an appropriate regional endpoint in production |
 | Format | `audio/mpeg` | Browser MediaSource playback |
 | Transport | HTTP response stream | API key remains server-side |
